@@ -10,10 +10,16 @@ import { SalesTracking } from "@/components/sales/sales-tracking"
 import { AnalyticsDashboard } from "@/components/analytics/analytics-dashboard"
 import { ReportExport } from "@/components/reports/report-export"
 import { CurrencySelector } from "@/components/currency/currency-selector"
+import { getUserCurrency, formatCurrency, type Currency } from "@/lib/currency"
 
 export function Dashboard() {
   const { user, logout } = useAuth()
   const [activeTab, setActiveTab] = useState("overview")
+  const [currentCurrency, setCurrentCurrency] = useState<Currency>(getUserCurrency())
+
+  const handleCurrencyChange = (currency: Currency) => {
+    setCurrentCurrency(currency)
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -31,7 +37,7 @@ export function Dashboard() {
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <CurrencySelector />
+              <CurrencySelector onCurrencyChange={handleCurrencyChange} />
               <span className="text-sm text-gray-600 dark:text-gray-300">Welcome, {user?.name}</span>
               <Button variant="outline" size="sm" onClick={logout}>
                 <LogOut className="h-4 w-4 mr-2" />
@@ -87,7 +93,7 @@ export function Dashboard() {
                   <DollarSign className="h-4 w-4 text-primary" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">$0.00</div>
+                  <div className="text-2xl font-bold">{formatCurrency(0, currentCurrency)}</div>
                   <p className="text-xs text-muted-foreground">No sales recorded yet</p>
                 </CardContent>
               </Card>
@@ -190,10 +196,10 @@ export function Dashboard() {
           </div>
         )}
 
-        {activeTab === "inventory" && <InventoryManagement />}
-        {activeTab === "sales" && <SalesTracking />}
-        {activeTab === "analytics" && <AnalyticsDashboard />}
-        {activeTab === "reports" && <ReportExport />}
+        {activeTab === "inventory" && <InventoryManagement key={currentCurrency.code} />}
+        {activeTab === "sales" && <SalesTracking key={currentCurrency.code} />}
+        {activeTab === "analytics" && <AnalyticsDashboard key={currentCurrency.code} />}
+        {activeTab === "reports" && <ReportExport key={currentCurrency.code} />}
       </main>
     </div>
   )
