@@ -8,46 +8,60 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useAuth } from "@/hooks/use-auth"
-import { BarChart3 } from "lucide-react"
+import { BarChart3, AlertCircle } from "lucide-react"
 
 export function LoginForm() {
   const { login, register } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setIsLoading(true)
+    setError(null) // Clear previous errors
 
-    const formData = new FormData(e.currentTarget)
-    const email = formData.get("email") as string
-    const password = formData.get("password") as string
+    try {
+      const formData = new FormData(e.currentTarget)
+      const email = formData.get("email") as string
+      const password = formData.get("password") as string
 
-    await login(email, password)
-    setIsLoading(false)
+      await login(email, password)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Login failed. Please try again.")
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setIsLoading(true)
+    setError(null) // Clear previous errors
 
-    const formData = new FormData(e.currentTarget)
-    const name = formData.get("name") as string
-    const email = formData.get("email") as string
-    const password = formData.get("password") as string
-    const businessName = formData.get("businessName") as string
+    try {
+      const formData = new FormData(e.currentTarget)
+      const name = formData.get("name") as string
+      const email = formData.get("email") as string
+      const password = formData.get("password") as string
+      const businessName = formData.get("businessName") as string
 
-    await register(name, email, password, businessName)
-    setIsLoading(false)
+      await register(name, email, password, businessName)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Registration failed. Please try again.")
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-100 dark:from-gray-900 dark:to-gray-800 p-4">
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-2 mb-4">
-            <div className="p-2 bg-blue-600 rounded-lg">
+            <div className="p-2 bg-green-600 rounded-lg">
               <BarChart3 className="h-6 w-6 text-white" />
             </div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Smart Sales</h1>
@@ -61,7 +75,14 @@ export function LoginForm() {
             <CardDescription className="text-center">Sign in to your account or create a new one</CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="login" className="w-full">
+            {error && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
+            <Tabs defaultValue="login" className="w-full" onValueChange={() => setError(null)}>
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="login">Sign In</TabsTrigger>
                 <TabsTrigger value="register">Sign Up</TabsTrigger>
@@ -80,6 +101,9 @@ export function LoginForm() {
                   <Button type="submit" className="w-full" disabled={isLoading}>
                     {isLoading ? "Signing in..." : "Sign In"}
                   </Button>
+                  <p className="text-sm text-gray-600 text-center mt-2">
+                    New user? Switch to "Sign Up" tab to create an account first.
+                  </p>
                 </form>
               </TabsContent>
 
