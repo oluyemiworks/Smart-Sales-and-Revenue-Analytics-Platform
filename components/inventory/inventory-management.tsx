@@ -27,16 +27,31 @@ import {
   type InventoryItem,
 } from "@/lib/storage"
 import { useToast } from "@/hooks/use-toast"
+import { formatCurrency, getCurrencyLabel, getUserCurrency } from "@/lib/currency"
 
 export function InventoryManagement() {
   const [inventory, setInventory] = useState<InventoryItem[]>([])
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null)
+  const [currency, setCurrency] = useState(getUserCurrency())
   const { toast } = useToast()
 
   useEffect(() => {
     setInventory(getInventory())
+    setCurrency(getUserCurrency())
+  }, [])
+
+  const handleCurrencyChange = () => {
+    setCurrency(getUserCurrency())
+  }
+
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setCurrency(getUserCurrency())
+    }
+    window.addEventListener("storage", handleStorageChange)
+    return () => window.removeEventListener("storage", handleStorageChange)
   }, [])
 
   const handleAddItem = (e: React.FormEvent<HTMLFormElement>) => {
@@ -138,11 +153,11 @@ export function InventoryManagement() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="costPrice">Cost Price ($)</Label>
+                  <Label htmlFor="costPrice">{getCurrencyLabel("Cost Price", currency)}</Label>
                   <Input id="costPrice" name="costPrice" type="number" step="0.01" placeholder="0.00" required />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="sellingPrice">Selling Price ($)</Label>
+                  <Label htmlFor="sellingPrice">{getCurrencyLabel("Selling Price", currency)}</Label>
                   <Input id="sellingPrice" name="sellingPrice" type="number" step="0.01" placeholder="0.00" required />
                 </div>
               </div>
@@ -198,7 +213,7 @@ export function InventoryManagement() {
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${totalValue.toFixed(2)}</div>
+            <div className="text-2xl font-bold">{formatCurrency(totalValue, currency)}</div>
             <p className="text-xs text-muted-foreground">At selling price</p>
           </CardContent>
         </Card>
@@ -282,8 +297,8 @@ export function InventoryManagement() {
                       <TableCell>
                         <Badge variant="secondary">{item.category}</Badge>
                       </TableCell>
-                      <TableCell>${item.costPrice.toFixed(2)}</TableCell>
-                      <TableCell>${item.sellingPrice.toFixed(2)}</TableCell>
+                      <TableCell>{formatCurrency(item.costPrice, currency)}</TableCell>
+                      <TableCell>{formatCurrency(item.sellingPrice, currency)}</TableCell>
                       <TableCell>
                         <span className={item.quantity <= 5 ? "text-orange-600 font-medium" : ""}>{item.quantity}</span>
                       </TableCell>
@@ -298,7 +313,7 @@ export function InventoryManagement() {
                           {calculateProfitMargin(item.costPrice, item.sellingPrice).toFixed(1)}%
                         </span>
                       </TableCell>
-                      <TableCell>${(item.sellingPrice * item.quantity).toFixed(2)}</TableCell>
+                      <TableCell>{formatCurrency(item.sellingPrice * item.quantity, currency)}</TableCell>
                       <TableCell>
                         <div className="flex gap-2">
                           <Button variant="outline" size="sm" onClick={() => openEditDialog(item)}>
@@ -333,7 +348,7 @@ export function InventoryManagement() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="edit-costPrice">Cost Price ($)</Label>
+                  <Label htmlFor="edit-costPrice">{getCurrencyLabel("Cost Price", currency)}</Label>
                   <Input
                     id="edit-costPrice"
                     name="costPrice"
@@ -344,7 +359,7 @@ export function InventoryManagement() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="edit-sellingPrice">Selling Price ($)</Label>
+                  <Label htmlFor="edit-sellingPrice">{getCurrencyLabel("Selling Price", currency)}</Label>
                   <Input
                     id="edit-sellingPrice"
                     name="sellingPrice"
