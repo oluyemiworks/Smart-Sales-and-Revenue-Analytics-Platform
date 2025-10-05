@@ -28,8 +28,13 @@ import {
   type SaleRecord,
 } from "@/lib/storage"
 import { useToast } from "@/hooks/use-toast"
+import { formatCurrency, type Currency } from "@/lib/currency"
 
-export function SalesTracking() {
+interface SalesTrackingProps {
+  currency: Currency
+}
+
+export function SalesTracking({ currency }: SalesTrackingProps) {
   const [inventory, setInventory] = useState<InventoryItem[]>([])
   const [sales, setSales] = useState<SaleRecord[]>([])
   const [isAddSaleDialogOpen, setIsAddSaleDialogOpen] = useState(false)
@@ -78,13 +83,13 @@ export function SalesTracking() {
     }
 
     saveSaleRecord(newSale)
-    setInventory(getInventory()) // Refresh to show updated quantities
+    setInventory(getInventory())
     setSales(getSales())
     setIsAddSaleDialogOpen(false)
 
     toast({
       title: "Sale Recorded",
-      description: `Sold ${quantitySold} units of ${selectedItem.name} for $${newSale.totalAmount.toFixed(2)}.`,
+      description: `Sold ${quantitySold} units of ${selectedItem.name} for ${formatCurrency(newSale.totalAmount, currency)}.`,
     })
   }
 
@@ -94,21 +99,20 @@ export function SalesTracking() {
   const todaysRevenue = todaysSales.reduce((sum, sale) => sum + sale.totalAmount, 0)
   const selectedDateRevenue = selectedDateSales.reduce((sum, sale) => sum + sale.totalAmount, 0)
 
-  // Calculate profit for selected date
   const selectedDateIncome = calculateDailyIncome(selectedDate)
 
   const availableItems = inventory.filter((item) => item.quantity > 0)
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Sales Tracking</h2>
           <p className="text-gray-600 dark:text-gray-400">Record and monitor your daily sales</p>
         </div>
         <Dialog open={isAddSaleDialogOpen} onOpenChange={setIsAddSaleDialogOpen}>
           <DialogTrigger asChild>
-            <Button disabled={availableItems.length === 0}>
+            <Button disabled={availableItems.length === 0} className="w-full sm:w-auto">
               <Plus className="h-4 w-4 mr-2" />
               Record Sale
             </Button>
@@ -128,7 +132,7 @@ export function SalesTracking() {
                   <SelectContent>
                     {availableItems.map((item) => (
                       <SelectItem key={item.id} value={item.id}>
-                        {item.name} - ${item.sellingPrice.toFixed(2)} ({item.quantity} in stock)
+                        {item.name} - {formatCurrency(item.sellingPrice, currency)} ({item.quantity} in stock)
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -171,7 +175,7 @@ export function SalesTracking() {
       )}
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Today's Sales</CardTitle>
@@ -189,7 +193,7 @@ export function SalesTracking() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${todaysRevenue.toFixed(2)}</div>
+            <div className="text-2xl font-bold">{formatCurrency(todaysRevenue, currency)}</div>
             <p className="text-xs text-muted-foreground">Revenue today</p>
           </CardContent>
         </Card>
@@ -211,7 +215,7 @@ export function SalesTracking() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${totalRevenue.toFixed(2)}</div>
+            <div className="text-2xl font-bold">{formatCurrency(totalRevenue, currency)}</div>
             <p className="text-xs text-muted-foreground">All time revenue</p>
           </CardContent>
         </Card>
@@ -227,25 +231,27 @@ export function SalesTracking() {
           <CardDescription>View sales for a specific date</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center gap-4 mb-4">
-            <div className="flex items-center gap-2">
-              <Label htmlFor="dateFilter">Select Date:</Label>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-4">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <Label htmlFor="dateFilter" className="whitespace-nowrap">
+                Select Date:
+              </Label>
               <Input
                 id="dateFilter"
                 type="date"
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
-                className="w-auto"
+                className="w-full sm:w-auto"
               />
             </div>
-            <div className="flex items-center gap-4 text-sm">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-sm">
               <div className="flex items-center gap-1">
                 <span className="font-medium">Sales:</span>
                 <Badge variant="secondary">{selectedDateSales.length}</Badge>
               </div>
               <div className="flex items-center gap-1">
                 <span className="font-medium">Revenue:</span>
-                <Badge variant="secondary">${selectedDateRevenue.toFixed(2)}</Badge>
+                <Badge variant="secondary">{formatCurrency(selectedDateRevenue, currency)}</Badge>
               </div>
               <div className="flex items-center gap-1">
                 <span className="font-medium">Profit:</span>
@@ -253,7 +259,7 @@ export function SalesTracking() {
                   variant="secondary"
                   className="text-green-700 bg-green-100 dark:text-green-300 dark:bg-green-900"
                 >
-                  ${selectedDateIncome.totalProfit.toFixed(2)}
+                  {formatCurrency(selectedDateIncome.totalProfit, currency)}
                 </Badge>
               </div>
             </div>
@@ -284,8 +290,8 @@ export function SalesTracking() {
                       <TableCell className="font-medium">{new Date(sale.createdAt).toLocaleTimeString()}</TableCell>
                       <TableCell>{sale.itemName}</TableCell>
                       <TableCell>{sale.quantitySold}</TableCell>
-                      <TableCell>${sale.unitPrice.toFixed(2)}</TableCell>
-                      <TableCell className="font-medium">${sale.totalAmount.toFixed(2)}</TableCell>
+                      <TableCell>{formatCurrency(sale.unitPrice, currency)}</TableCell>
+                      <TableCell className="font-medium">{formatCurrency(sale.totalAmount, currency)}</TableCell>
                       <TableCell>
                         <Badge
                           variant="default"
@@ -343,8 +349,8 @@ export function SalesTracking() {
                         <TableCell className="font-medium">{new Date(sale.date).toLocaleDateString()}</TableCell>
                         <TableCell>{sale.itemName}</TableCell>
                         <TableCell>{sale.quantitySold}</TableCell>
-                        <TableCell>${sale.unitPrice.toFixed(2)}</TableCell>
-                        <TableCell className="font-medium">${sale.totalAmount.toFixed(2)}</TableCell>
+                        <TableCell>{formatCurrency(sale.unitPrice, currency)}</TableCell>
+                        <TableCell className="font-medium">{formatCurrency(sale.totalAmount, currency)}</TableCell>
                       </TableRow>
                     ))}
                 </TableBody>

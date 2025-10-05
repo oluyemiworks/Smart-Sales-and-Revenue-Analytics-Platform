@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useAuth } from "@/hooks/use-auth"
-import { BarChart3, Package, TrendingUp, LogOut, Plus, DollarSign, Download } from "lucide-react"
+import { BarChart3, Package, TrendingUp, LogOut, Plus, DollarSign, Download, Menu, X } from "lucide-react"
 import { InventoryManagement } from "@/components/inventory/inventory-management"
 import { SalesTracking } from "@/components/sales/sales-tracking"
 import { AnalyticsDashboard } from "@/components/analytics/analytics-dashboard"
@@ -16,9 +16,15 @@ export function Dashboard() {
   const { user, logout } = useAuth()
   const [activeTab, setActiveTab] = useState("overview")
   const [currentCurrency, setCurrentCurrency] = useState<Currency>(getUserCurrency())
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   const handleCurrencyChange = (currency: Currency) => {
     setCurrentCurrency(currency)
+  }
+
+  const handleTabChange = (tabId: string) => {
+    setActiveTab(tabId)
+    setIsMobileMenuOpen(false)
   }
 
   return (
@@ -32,11 +38,13 @@ export function Dashboard() {
                 <BarChart3 className="h-5 w-5 text-primary-foreground" />
               </div>
               <div>
-                <h1 className="text-xl font-semibold text-gray-900 dark:text-white">Smart Sales</h1>
-                <p className="text-sm text-gray-500 dark:text-gray-400">{user?.businessName}</p>
+                <h1 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">Smart Sales</h1>
+                <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 truncate max-w-[150px] sm:max-w-none">
+                  {user?.businessName}
+                </p>
               </div>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="hidden md:flex items-center gap-4">
               <CurrencySelector onCurrencyChange={handleCurrencyChange} />
               <span className="text-sm text-gray-600 dark:text-gray-300">Welcome, {user?.name}</span>
               <Button variant="outline" size="sm" onClick={logout}>
@@ -44,12 +52,17 @@ export function Dashboard() {
                 Logout
               </Button>
             </div>
+            <div className="flex md:hidden items-center gap-2">
+              <CurrencySelector onCurrencyChange={handleCurrencyChange} />
+              <Button variant="ghost" size="sm" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2">
+                {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              </Button>
+            </div>
           </div>
         </div>
       </header>
 
-      {/* Navigation */}
-      <nav className="bg-white dark:bg-gray-800 border-b">
+      <nav className="hidden md:block bg-white dark:bg-gray-800 border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex space-x-8">
             {[
@@ -75,6 +88,40 @@ export function Dashboard() {
           </div>
         </div>
       </nav>
+
+      {isMobileMenuOpen && (
+        <div className="md:hidden bg-white dark:bg-gray-800 border-b shadow-lg">
+          <div className="px-4 py-2 space-y-1">
+            {[
+              { id: "overview", label: "Overview", icon: BarChart3 },
+              { id: "inventory", label: "Inventory", icon: Package },
+              { id: "sales", label: "Sales", icon: DollarSign },
+              { id: "analytics", label: "Analytics", icon: TrendingUp },
+              { id: "reports", label: "Reports", icon: Download },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => handleTabChange(tab.id)}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-sm ${
+                  activeTab === tab.id
+                    ? "bg-primary text-primary-foreground"
+                    : "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                }`}
+              >
+                <tab.icon className="h-5 w-5" />
+                {tab.label}
+              </button>
+            ))}
+            <div className="pt-2 border-t">
+              <div className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">Welcome, {user?.name}</div>
+              <Button variant="outline" size="sm" onClick={logout} className="w-full justify-start bg-transparent">
+                <LogOut className="h-4 w-4 mr-2" />
+                Logout
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -196,10 +243,10 @@ export function Dashboard() {
           </div>
         )}
 
-        {activeTab === "inventory" && <InventoryManagement key={currentCurrency.code} />}
-        {activeTab === "sales" && <SalesTracking key={currentCurrency.code} />}
-        {activeTab === "analytics" && <AnalyticsDashboard key={currentCurrency.code} />}
-        {activeTab === "reports" && <ReportExport key={currentCurrency.code} />}
+        {activeTab === "inventory" && <InventoryManagement key={currentCurrency.code} currency={currentCurrency} />}
+        {activeTab === "sales" && <SalesTracking key={currentCurrency.code} currency={currentCurrency} />}
+        {activeTab === "analytics" && <AnalyticsDashboard key={currentCurrency.code} currency={currentCurrency} />}
+        {activeTab === "reports" && <ReportExport key={currentCurrency.code} currency={currentCurrency} />}
       </main>
     </div>
   )
